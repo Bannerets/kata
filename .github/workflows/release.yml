@@ -1,0 +1,52 @@
+name: Make a release with pre-built executables
+# gh workflow run release.yml --ref Hex2022
+on: workflow_dispatch
+jobs:
+  build-windows-x64:
+    name: Build / Windows x86-64
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: '~\AppData\Local\vcpkg\archives'
+          key: windows-vcpkg-${{ github.run_id }}
+          restore-keys: |
+            windows-vcpkg-
+      - name: Install dependencies using vcpkg
+        run: vcpkg install zlib:x64-windows-static eigen3:x64-windows-static zlib:x64-windows opencl:x64-windows
+      - name: Build the cmake project (Eigen, 19x19)
+        uses: threeal/cmake-action@main
+        with:
+          source-dir: cpp
+          options: |
+            CMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+            VCPKG_TARGET_TRIPLET=x64-windows-static
+            CMAKE_BUILD_TYPE=Release
+            ZLIB_USE_STATIC_LIBS=TRUE
+            MAX_BOARD_LEN=19
+            USE_BACKEND=EIGEN
+          build-args: --config Release
+      - run: cp cpp/build/Release/katahex.exe katahex-win64-19-eigen.exe && rm cpp/build -r -fo
+      - name: Build the cmake project (OpenCL, 19x19)
+        uses: threeal/cmake-action@main
+        with:
+          source-dir: cpp
+          options: |
+            CMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+            VCPKG_TARGET_TRIPLET=x64-windows
+            CMAKE_BUILD_TYPE=Release
+            ZLIB_USE_STATIC_LIBS=TRUE
+            MAX_BOARD_LEN=19
+            USE_BACKEND=OPENCL
+          build-args: --config Release
+      - run: cp cpp/build/Release/katahex.exe katahex-win64-19-opencl.exe && rm cpp/build -r -fo
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Pre-built KataHex
+          files: |
+            katahex-win64-19-eigen.exe
+            katahex-win64-19-opencl.exe
