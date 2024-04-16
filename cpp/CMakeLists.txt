@@ -35,6 +35,8 @@ set(NO_GIT_REVISION 0 CACHE BOOL "Disable embedding the git revision into the co
 set(USE_AVX2 0 CACHE BOOL "Compile with AVX2")
 set(USE_BIGGER_BOARDS_EXPENSIVE 0 CACHE BOOL "Allow boards up to size 29. Compiling with this will use more memory and slow down KataGo, even when playing on boards of size 19.")
 
+set(MAX_BOARD_SIZE 13 CACHE STRING "Max board size")
+
 #--------------------------- NEURAL NET BACKEND ------------------------------------------------------------------------
 
 message(STATUS "Building 'katago' executable for GTP engine and other tools.")
@@ -287,6 +289,10 @@ elseif(USE_BACKEND STREQUAL "EIGEN")
       endif()
     endif()
   endif()
+endif()
+
+if(NOT MAX_BOARD_SIZE STREQUAL "")
+  target_compile_definitions(katago PRIVATE COMPILE_MAX_BOARD_LEN=${MAX_BOARD_SIZE})
 endif()
 
 if(USE_BIGGER_BOARDS_EXPENSIVE)
